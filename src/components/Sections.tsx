@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useLang } from "@/lib/i18n";
 import Reveal from "./Reveal";
 
-/* Placeholder contact targets — replace with real ones */
-const WHATSAPP_URL = "https://wa.me/355000000000"; // TODO: real number
+const WHATSAPP_URL = "https://wa.me/355687683048";
 const INSTAGRAM_URL = "https://www.instagram.com/graciano_dhima/";
 
 export function Stats() {
