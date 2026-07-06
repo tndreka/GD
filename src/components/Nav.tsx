@@ -25,9 +25,6 @@ export default function Nav() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const authHref = loggedIn ? "/dashboard" : "/login";
-  const authLabel = loggedIn ? t.nav.dashboard : t.nav.login;
-
   const links = [
     { href: "#programs", label: t.nav.programs },
     { href: "#coaching", label: t.nav.coaching },
@@ -73,9 +70,20 @@ export default function Nav() {
             ))}
           </div>
 
-          <a href={authHref} className="btn-ghost !py-2 !px-4 !text-xs hidden sm:inline-flex">
-            {authLabel}
-          </a>
+          {loggedIn ? (
+            <a href="/dashboard" className="btn-ghost !py-2 !px-4 !text-xs hidden sm:inline-flex">
+              {t.nav.dashboard}
+            </a>
+          ) : (
+            <>
+              <a href="/login" className="hidden sm:inline-flex text-xs text-muted hover:text-foreground transition-colors">
+                {t.nav.login}
+              </a>
+              <a href="/register" className="btn-ghost !py-2 !px-4 !text-xs hidden sm:inline-flex">
+                {t.nav.register}
+              </a>
+            </>
+          )}
 
           <a href="#contact" className="btn-gold !py-2 !px-4 !text-xs hidden sm:inline-flex">
             {t.nav.cta}
@@ -102,9 +110,20 @@ export default function Nav() {
               {l.label}
             </a>
           ))}
-          <a href={authHref} onClick={() => setOpen(false)} className="btn-ghost !py-2.5 text-center">
-            {authLabel}
-          </a>
+          {loggedIn ? (
+            <a href="/dashboard" onClick={() => setOpen(false)} className="btn-ghost !py-2.5 text-center">
+              {t.nav.dashboard}
+            </a>
+          ) : (
+            <>
+              <a href="/login" onClick={() => setOpen(false)} className="text-muted hover:text-foreground text-center py-1">
+                {t.nav.login}
+              </a>
+              <a href="/register" onClick={() => setOpen(false)} className="btn-ghost !py-2.5 text-center">
+                {t.nav.register}
+              </a>
+            </>
+          )}
           <a href="#contact" onClick={() => setOpen(false)} className="btn-gold !py-2.5 text-center">
             {t.nav.cta}
           </a>

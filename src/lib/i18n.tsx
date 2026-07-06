@@ -7,7 +7,7 @@ export type Lang = "en" | "sq";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const dict: Record<Lang, any> = {
   en: {
-    nav: { programs: "Programs", coaching: "Coaching", inPerson: "In-Person", about: "About", faq: "FAQ", contact: "Contact", cta: "Start Now", login: "Log In", dashboard: "My Programs" },
+    nav: { programs: "Programs", coaching: "Coaching", inPerson: "In-Person", about: "About", faq: "FAQ", contact: "Contact", cta: "Start Now", login: "Log In", register: "Register", dashboard: "My Programs" },
     hero: {
       tag: "Biomechanics · Posture · Strength",
       title1: "From Pain",
@@ -146,7 +146,7 @@ export const dict: Record<Lang, any> = {
     },
   },
   sq: {
-    nav: { programs: "Programet", coaching: "Coaching", inPerson: "Në Palestër", about: "Rreth Meje", faq: "Pyetje", contact: "Kontakt", cta: "Fillo Tani", login: "Hyr", dashboard: "Programet e Mia" },
+    nav: { programs: "Programet", coaching: "Coaching", inPerson: "Në Palestër", about: "Rreth Meje", faq: "Pyetje", contact: "Kontakt", cta: "Fillo Tani", login: "Hyr", register: "Regjistrohu", dashboard: "Programet e Mia" },
     hero: {
       tag: "Biomekanikë · Posturë · Forcë",
       title1: "Nga Dhimbja",
