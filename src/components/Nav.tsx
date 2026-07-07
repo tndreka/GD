@@ -54,9 +54,9 @@ export default function Nav() {
           <span className="gold-text">G</span>RACIANO <span className="gold-text">D</span>HIMA
         </a>
 
-        <nav className="hidden lg:flex items-center gap-7 text-sm text-muted">
+        <nav className="hidden lg:flex items-center gap-8 text-base font-medium text-foreground/85">
           {links.map((l) => (
-            <a key={l.href} href={l.href} className="hover:text-foreground transition-colors">
+            <a key={l.href} href={l.href} className="hover:text-gold transition-colors">
               {l.label}
             </a>
           ))}
@@ -117,9 +117,9 @@ export default function Nav() {
 
       {/* mobile menu */}
       {open && (
-        <nav className="lg:hidden border-t border-line bg-background/95 backdrop-blur px-5 py-4 flex flex-col gap-4 text-sm">
+        <nav className="lg:hidden border-t border-line bg-background/95 backdrop-blur px-5 py-5 flex flex-col gap-5 text-base font-medium">
           {links.map((l) => (
-            <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="text-muted hover:text-foreground">
+            <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="text-foreground/85 hover:text-gold">
               {l.label}
             </a>
           ))}
