@@ -98,10 +98,6 @@ export default function Nav() {
             </>
           )}
 
-          <a href="#contact" className="btn-gold !py-2 !px-4 !text-xs hidden sm:inline-flex">
-            {t.nav.cta}
-          </a>
-
           {/* mobile menu button */}
           <button
             className="lg:hidden flex flex-col gap-1.5 p-2"
@@ -142,9 +138,6 @@ export default function Nav() {
               </a>
             </>
           )}
-          <a href="#contact" onClick={() => setOpen(false)} className="btn-gold !py-2.5 text-center">
-            {t.nav.cta}
-          </a>
         </nav>
       )}
     </header>
