@@ -25,6 +25,14 @@ export default function Nav() {
     return () => subscription.unsubscribe();
   }, []);
 
+  async function logout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setLoggedIn(false);
+    setOpen(false);
+    window.location.href = "/";
+  }
+
   const links = [
     { href: "#programs", label: t.nav.programs },
     { href: "#coaching", label: t.nav.coaching },
@@ -71,9 +79,14 @@ export default function Nav() {
           </div>
 
           {loggedIn ? (
-            <a href="/dashboard" className="btn-ghost !py-2 !px-4 !text-xs hidden sm:inline-flex">
-              {t.nav.dashboard}
-            </a>
+            <>
+              <a href="/dashboard" className="btn-ghost !py-2 !px-4 !text-xs hidden sm:inline-flex">
+                {t.nav.dashboard}
+              </a>
+              <button onClick={logout} className="hidden sm:inline-flex text-xs text-muted hover:text-foreground transition-colors">
+                {t.nav.logout}
+              </button>
+            </>
           ) : (
             <>
               <a href="/login" className="hidden sm:inline-flex text-xs text-muted hover:text-foreground transition-colors">
@@ -111,9 +124,14 @@ export default function Nav() {
             </a>
           ))}
           {loggedIn ? (
-            <a href="/dashboard" onClick={() => setOpen(false)} className="btn-ghost !py-2.5 text-center">
-              {t.nav.dashboard}
-            </a>
+            <>
+              <a href="/dashboard" onClick={() => setOpen(false)} className="btn-ghost !py-2.5 text-center">
+                {t.nav.dashboard}
+              </a>
+              <button onClick={logout} className="text-muted hover:text-foreground text-center py-1">
+                {t.nav.logout}
+              </button>
+            </>
           ) : (
             <>
               <a href="/login" onClick={() => setOpen(false)} className="text-muted hover:text-foreground text-center py-1">

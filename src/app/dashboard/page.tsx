@@ -65,8 +65,7 @@ function DashboardInner() {
 
   async function logout() {
     await supabase.auth.signOut();
-    router.replace("/");
-    router.refresh();
+    window.location.href = "/";
   }
 
   const title = (p: Purchase) => (lang === "sq" ? p.programs?.title_sq : p.programs?.title_en);
