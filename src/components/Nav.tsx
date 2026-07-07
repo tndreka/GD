@@ -89,7 +89,7 @@ export default function Nav() {
             </>
           ) : (
             <>
-              <a href="/login" className="hidden sm:inline-flex text-xs text-muted hover:text-foreground transition-colors">
+              <a href="/login" className="btn-ghost !py-2 !px-4 !text-xs hidden sm:inline-flex">
                 {t.nav.login}
               </a>
               <a href="/register" className="btn-ghost !py-2 !px-4 !text-xs hidden sm:inline-flex">
@@ -134,7 +134,7 @@ export default function Nav() {
             </>
           ) : (
             <>
-              <a href="/login" onClick={() => setOpen(false)} className="text-muted hover:text-foreground text-center py-1">
+              <a href="/login" onClick={() => setOpen(false)} className="btn-ghost !py-2.5 text-center">
                 {t.nav.login}
               </a>
               <a href="/register" onClick={() => setOpen(false)} className="btn-ghost !py-2.5 text-center">
