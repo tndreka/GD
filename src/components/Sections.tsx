@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useLang } from "@/lib/i18n";
 import Reveal from "./Reveal";
 
@@ -154,10 +155,16 @@ export function About() {
   const { t } = useLang();
   return (
     <section id="about" className="mx-auto max-w-7xl px-5 md:px-8 py-24 grid md:grid-cols-2 gap-12 items-center">
-      {/* Photo placeholder — replace with his real portrait */}
       <Reveal>
-        <div className="card aspect-[4/5] flex items-center justify-center max-w-md mx-auto w-full">
-          <span className="heading text-6xl font-bold gold-text">GD</span>
+        <div className="card aspect-[4/5] max-w-md mx-auto w-full overflow-hidden">
+          <Image
+            src="/coach.jpg"
+            alt="Graciano Dhima"
+            width={1252}
+            height={1019}
+            className="w-full h-full object-cover object-top"
+            priority={false}
+          />
         </div>
       </Reveal>
       <Reveal delay={120}>
