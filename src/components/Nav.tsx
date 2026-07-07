@@ -54,9 +54,9 @@ export default function Nav() {
           <span className="gold-text">G</span>RACIANO <span className="gold-text">D</span>HIMA
         </a>
 
-        <nav className="hidden lg:flex items-center gap-8 text-base font-medium text-foreground/85">
+        <nav className="hidden lg:flex items-center gap-1.5 text-base font-medium text-foreground/85">
           {links.map((l) => (
-            <a key={l.href} href={l.href} className="hover:text-gold transition-colors">
+            <a key={l.href} href={l.href} className="nav-pill">
               {l.label}
             </a>
           ))}
