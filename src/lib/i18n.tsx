@@ -112,6 +112,9 @@ export const dict: Record<Lang, any> = {
     footer: {
       tagline: "From Pain To Performance",
       rights: "All rights reserved.",
+      privacy: "Privacy Policy",
+      terms: "Terms of Service",
+      disclaimer: "Health Disclaimer",
     },
     auth: {
       loginTitle: "Welcome Back",
@@ -132,6 +135,10 @@ export const dict: Record<Lang, any> = {
       errorGeneric: "Something went wrong. Please try again.",
       errorInvalid: "Wrong email or password.",
       back: "← Back to site",
+      consentPre: "I agree to the",
+      consentTerms: "Terms of Service",
+      consentAnd: "and the",
+      consentPrivacy: "Privacy Policy",
     },
     dash: {
       title: "My Programs",
@@ -251,6 +258,9 @@ export const dict: Record<Lang, any> = {
     footer: {
       tagline: "Nga Dhimbja te Performanca",
       rights: "Të gjitha të drejtat e rezervuara.",
+      privacy: "Politika e Privatësisë",
+      terms: "Kushtet e Shërbimit",
+      disclaimer: "Deklaratë Shëndetësore",
     },
     auth: {
       loginTitle: "Mirë se u Ktheve",
@@ -271,6 +281,10 @@ export const dict: Record<Lang, any> = {
       errorGeneric: "Diçka shkoi keq. Provo përsëri.",
       errorInvalid: "Email ose fjalëkalim i gabuar.",
       back: "← Kthehu te faqja",
+      consentPre: "Pranoj",
+      consentTerms: "Kushtet e Shërbimit",
+      consentAnd: "dhe",
+      consentPrivacy: "Politikën e Privatësisë",
     },
     dash: {
       title: "Programet e Mia",

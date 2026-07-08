@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useLang } from "@/lib/i18n";
 import Reveal from "./Reveal";
 
@@ -315,6 +316,13 @@ export function Footer() {
         </span>
         <span className="gold-text uppercase tracking-widest text-xs">{t.footer.tagline}</span>
         <span className="text-xs">© {new Date().getFullYear()} Graciano Dhima. {t.footer.rights}</span>
+      </div>
+      <div className="border-t border-line">
+        <div className="mx-auto max-w-7xl px-5 md:px-8 py-4 flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 text-xs text-muted">
+          <Link href="/privacy" className="hover:text-gold transition-colors">{t.footer.privacy}</Link>
+          <Link href="/terms" className="hover:text-gold transition-colors">{t.footer.terms}</Link>
+          <Link href="/disclaimer" className="hover:text-gold transition-colors">{t.footer.disclaimer}</Link>
+        </div>
       </div>
     </footer>
   );

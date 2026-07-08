@@ -141,6 +141,21 @@ export default function AuthCard({ mode }: { mode: "login" | "register" }) {
                   placeholder={a.password}
                   className={inputCls}
                 />
+                {!isLogin && (
+                  <label className="flex items-start gap-2.5 text-xs text-muted mt-1 cursor-pointer">
+                    <input type="checkbox" required className="mt-0.5 accent-[#ffc800]" />
+                    <span>
+                      {a.consentPre}{" "}
+                      <Link href="/terms" target="_blank" className="text-gold hover:underline">
+                        {a.consentTerms}
+                      </Link>{" "}
+                      {a.consentAnd}{" "}
+                      <Link href="/privacy" target="_blank" className="text-gold hover:underline">
+                        {a.consentPrivacy}
+                      </Link>
+                    </span>
+                  </label>
+                )}
                 {error && <p className="text-xs text-red-400">{error}</p>}
                 <button type="submit" disabled={loading} className="btn-gold w-full !justify-center disabled:opacity-60">
                   {loading ? "…" : isLogin ? a.login : a.register}
