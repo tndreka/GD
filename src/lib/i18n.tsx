@@ -121,6 +121,12 @@ export const dict: Record<Lang, any> = {
       terms: "Terms of Service",
       disclaimer: "Health Disclaimer",
     },
+    cookie: {
+      msg: "We use cookies to understand how visitors use the site and to improve it. Analytics only runs if you accept.",
+      more: "Learn more",
+      accept: "Accept",
+      decline: "Decline",
+    },
     notFound: {
       title: "Page Not Found",
       desc: "The page you're looking for doesn't exist or has moved.",
@@ -294,6 +300,12 @@ export const dict: Record<Lang, any> = {
       privacy: "Politika e Privatësisë",
       terms: "Kushtet e Shërbimit",
       disclaimer: "Deklaratë Shëndetësore",
+    },
+    cookie: {
+      msg: "Përdorim cookies për të kuptuar si përdoret faqja dhe për ta përmirësuar atë. Analitika aktivizohet vetëm nëse pranon.",
+      more: "Mëso më shumë",
+      accept: "Prano",
+      decline: "Refuzo",
     },
     notFound: {
       title: "Faqja Nuk u Gjet",

@@ -5,16 +5,15 @@ import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 // - 'unsafe-eval' only in dev (Next.js HMR needs it)
 // - 'unsafe-inline' required by Next.js inline bootstrap scripts + Tailwind inline styles
 // - connect-src allows Supabase (auth + DB)
-// NOTE: when analytics is added (Fix 7), extend script-src/connect-src with
-// googletagmanager.com, google-analytics.com, connect.facebook.net
+// - GA4 + Meta Pixel domains allowed (scripts only load after cookie consent)
 const buildCsp = (isDev: boolean) =>
   [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com https://connect.facebook.net`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com",
     "font-src 'self'",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.facebook.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
