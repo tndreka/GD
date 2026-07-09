@@ -121,6 +121,17 @@ export const dict: Record<Lang, any> = {
       terms: "Terms of Service",
       disclaimer: "Health Disclaimer",
     },
+    notFound: {
+      title: "Page Not Found",
+      desc: "The page you're looking for doesn't exist or has moved.",
+      cta: "Back to Home",
+    },
+    errorPage: {
+      title: "Something Went Wrong",
+      desc: "An unexpected error occurred. Please try again.",
+      retry: "Try Again",
+      home: "Back to Home",
+    },
     auth: {
       loginTitle: "Welcome Back",
       loginSub: "Log in to access your programs.",
@@ -284,6 +295,17 @@ export const dict: Record<Lang, any> = {
       terms: "Kushtet e Shërbimit",
       disclaimer: "Deklaratë Shëndetësore",
     },
+    notFound: {
+      title: "Faqja Nuk u Gjet",
+      desc: "Faqja që kërkon nuk ekziston ose është zhvendosur.",
+      cta: "Kthehu te Faqja",
+    },
+    errorPage: {
+      title: "Diçka Shkoi Keq",
+      desc: "Ndodhi një gabim i papritur. Provo përsëri.",
+      retry: "Provo Përsëri",
+      home: "Kthehu te Faqja",
+    },
     auth: {
       loginTitle: "Mirë se u Ktheve",
       loginSub: "Hyr për të parë programet e tua.",
@@ -350,6 +372,11 @@ export function LangProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved === "en" || saved === "sq") setLangState(saved);
   }, []);
+
+  // keep <html lang=""> in sync for SEO + screen readers
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const setLang = (l: Lang) => {
     setLangState(l);
