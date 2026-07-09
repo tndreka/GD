@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  if (!user && (path.startsWith("/dashboard") || path === "/reset-password")) {
+  if (!user && (path.startsWith("/dashboard") || path.startsWith("/admin") || path === "/reset-password")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -46,5 +46,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/register", "/reset-password"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/login", "/register", "/reset-password"],
 };

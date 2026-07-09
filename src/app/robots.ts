@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/dashboard", "/api/", "/auth/", "/reset-password", "/forgot-password"],
+      disallow: ["/dashboard", "/admin", "/api/", "/auth/", "/reset-password", "/forgot-password"],
     },
     sitemap: "https://gracianodhima.com/sitemap.xml",
   };

@@ -26,6 +26,7 @@ function DashboardInner() {
   const supabase = createClient();
 
   const [name, setName] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +44,7 @@ function DashboardInner() {
       }
 
       const [{ data: profile }, { data: rows }] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+        supabase.from("profiles").select("full_name, is_admin").eq("id", user.id).single(),
         supabase
           .from("purchases")
           .select(
@@ -54,6 +55,7 @@ function DashboardInner() {
 
       if (cancelled) return;
       setName(profile?.full_name ?? user.email ?? null);
+      setIsAdmin(profile?.is_admin ?? false);
       setPurchases((rows as unknown as Purchase[]) ?? []);
       setLoading(false);
     })();
@@ -81,6 +83,11 @@ function DashboardInner() {
             <span className="gold-text">G</span>RACIANO <span className="gold-text">D</span>HIMA
           </Link>
           <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Link href="/admin" className="text-xs text-gold hover:underline uppercase tracking-widest">
+                {d.admin}
+              </Link>
+            )}
             <div className="flex text-xs font-bold border border-line overflow-hidden">
               {(["en", "sq"] as Lang[]).map((l) => (
                 <button
