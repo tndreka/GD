@@ -141,6 +141,11 @@ export default function AuthCard({ mode }: { mode: "login" | "register" }) {
                   placeholder={a.password}
                   className={inputCls}
                 />
+                {isLogin && (
+                  <Link href="/forgot-password" className="text-xs text-muted hover:text-gold transition-colors self-end -mt-1">
+                    {a.forgot}
+                  </Link>
+                )}
                 {!isLogin && (
                   <label className="flex items-start gap-2.5 text-xs text-muted mt-1 cursor-pointer">
                     <input type="checkbox" required className="mt-0.5 accent-[#ffc800]" />
