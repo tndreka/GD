@@ -217,33 +217,50 @@ export function Faq() {
 }
 
 export function LeadMagnet() {
-  const { t } = useLang();
-  const [sent, setSent] = useState(false);
+  const { lang, t } = useLang();
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, lang }),
+      });
+      setStatus(res.ok ? "sent" : "error");
+    } catch {
+      setStatus("error");
+    }
+  }
+
   return (
     <section className="mx-auto max-w-7xl px-5 md:px-8 py-24">
       <Reveal>
         <div className="card card-featured p-10 md:p-14 text-center max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold">{t.lead.title}</h2>
           <p className="mt-3 text-muted">{t.lead.sub}</p>
-          {sent ? (
-            <p className="mt-8 gold-text font-semibold">✓</p>
+          {status === "sent" ? (
+            <p className="mt-8 gold-text font-semibold" role="status">✓ {t.lead.successMsg}</p>
           ) : (
-            <form
-              className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSent(true); // TODO: wire to email tool (MailerLite) / API route
-              }}
-            >
+            <form className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onSubmit={submit}>
               <input
                 type="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder={t.lead.placeholder}
+                aria-label={t.lead.placeholder}
                 className="flex-1 bg-surface-2 border border-line px-4 py-3 text-sm outline-none focus:border-gold"
               />
-              <button type="submit" className="btn-gold !py-3">{t.lead.cta}</button>
+              <button type="submit" disabled={status === "sending"} className="btn-gold !py-3 disabled:opacity-60">
+                {t.lead.cta}
+              </button>
             </form>
           )}
+          {status === "error" && <p className="mt-3 text-xs text-red-400" role="alert">{t.lead.errorMsg}</p>}
           <p className="mt-4 text-xs text-muted">{t.lead.note}</p>
         </div>
       </Reveal>
@@ -252,8 +269,28 @@ export function LeadMagnet() {
 }
 
 export function Contact() {
-  const { t } = useLang();
-  const [sent, setSent] = useState(false);
+  const { lang, t } = useLang();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [goal, setGoal] = useState("");
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, goal, message, lang }),
+      });
+      setStatus(res.ok ? "sent" : "error");
+    } catch {
+      setStatus("error");
+    }
+  }
+
   return (
     <section id="contact" className="bg-surface border-t border-line">
       <div className="mx-auto max-w-3xl px-5 md:px-8 py-24">
@@ -264,28 +301,27 @@ export function Contact() {
         </Reveal>
 
         <Reveal delay={120}>
-          {sent ? (
-            <p className="mt-12 text-center gold-text font-semibold text-lg">✓</p>
+          {status === "sent" ? (
+            <p className="mt-12 text-center gold-text font-semibold text-lg" role="status">
+              ✓ {t.contact.successMsg}
+            </p>
           ) : (
-            <form
-              className="mt-12 space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSent(true); // TODO: wire to API route / email notification
-              }}
-            >
+            <form className="mt-12 space-y-4" onSubmit={submit}>
               <div className="grid sm:grid-cols-2 gap-4">
-                <input required placeholder={t.contact.name} className="bg-surface-2 border border-line px-4 py-3 text-sm outline-none focus:border-gold w-full" />
-                <input required type="email" placeholder={t.contact.email} className="bg-surface-2 border border-line px-4 py-3 text-sm outline-none focus:border-gold w-full" />
+                <input required value={name} onChange={(e) => setName(e.target.value)} placeholder={t.contact.name} aria-label={t.contact.name} className="bg-surface-2 border border-line px-4 py-3 text-sm outline-none focus:border-gold w-full" />
+                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t.contact.email} aria-label={t.contact.email} className="bg-surface-2 border border-line px-4 py-3 text-sm outline-none focus:border-gold w-full" />
               </div>
-              <select required defaultValue="" className="bg-surface-2 border border-line px-4 py-3 text-sm outline-none focus:border-gold w-full text-muted">
+              <select required value={goal} onChange={(e) => setGoal(e.target.value)} aria-label={t.contact.goal} className="bg-surface-2 border border-line px-4 py-3 text-sm outline-none focus:border-gold w-full text-muted">
                 <option value="" disabled>{t.contact.goal}</option>
                 {t.contact.goalOptions.map((g: string) => (
                   <option key={g} value={g}>{g}</option>
                 ))}
               </select>
-              <textarea rows={4} placeholder={t.contact.message} className="bg-surface-2 border border-line px-4 py-3 text-sm outline-none focus:border-gold w-full" />
-              <button type="submit" className="btn-gold w-full">{t.contact.cta}</button>
+              <textarea rows={4} value={message} onChange={(e) => setMessage(e.target.value)} placeholder={t.contact.message} aria-label={t.contact.message} className="bg-surface-2 border border-line px-4 py-3 text-sm outline-none focus:border-gold w-full" />
+              {status === "error" && <p className="text-xs text-red-400" role="alert">{t.contact.errorMsg}</p>}
+              <button type="submit" disabled={status === "sending"} className="btn-gold w-full disabled:opacity-60">
+                {status === "sending" ? t.contact.sending : t.contact.cta}
+              </button>
             </form>
           )}
         </Reveal>
