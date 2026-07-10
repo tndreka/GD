@@ -18,6 +18,7 @@ export default function AuthCard({ mode }: { mode: "login" | "register" }) {
   const [error, setError] = useState<string | null>(null);
   const [checkEmail, setCheckEmail] = useState(false);
   const [showResend, setShowResend] = useState(false);
+  const [exists, setExists] = useState(false);
   const [resent, setResent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
@@ -92,7 +93,15 @@ export default function AuthCard({ mode }: { mode: "login" | "register" }) {
       });
       setLoading(false);
       if (error) {
-        setError(a.errorGeneric);
+        setError(error.message.toLowerCase().includes("already registered") ? a.errorExists : a.errorGeneric);
+        setExists(error.message.toLowerCase().includes("already registered"));
+        return;
+      }
+      // Supabase fakes success for existing accounts (anti-enumeration) but
+      // returns an empty identities array — surface it honestly instead.
+      if (data.user && data.user.identities?.length === 0) {
+        setError(a.errorExists);
+        setExists(true);
         return;
       }
       if (data.session) {
@@ -210,7 +219,19 @@ export default function AuthCard({ mode }: { mode: "login" | "register" }) {
                     </span>
                   </label>
                 )}
-                {error && <p className="text-xs text-red-400">{error}</p>}
+                {error && (
+                  <p className="text-xs text-red-400">
+                    {error}
+                    {exists && (
+                      <>
+                        {" "}
+                        <Link href="/login" className="text-gold hover:underline">
+                          {a.errorExistsCta} →
+                        </Link>
+                      </>
+                    )}
+                  </p>
+                )}
                 {showResend && resendBlock}
                 <button type="submit" disabled={loading} className="btn-gold w-full !justify-center disabled:opacity-60">
                   {loading ? "…" : isLogin ? a.login : a.register}
