@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLang } from "@/lib/i18n";
@@ -17,9 +17,49 @@ export default function AuthCard({ mode }: { mode: "login" | "register" }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkEmail, setCheckEmail] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
   const a = t.auth;
   const isLogin = mode === "login";
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
+
+  async function resendEmail() {
+    if (cooldown > 0 || !email) return;
+    setError(null);
+    setResent(false);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) {
+      setError(a.errorGeneric);
+      return;
+    }
+    setResent(true);
+    setCooldown(60); // Supabase rate-limits resends anyway
+  }
+
+  const resendBlock = (
+    <div className="mt-4 text-center">
+      {resent && <p className="text-xs text-gold mb-2">{a.resent}</p>}
+      <button
+        type="button"
+        onClick={resendEmail}
+        disabled={cooldown > 0}
+        className="text-xs text-muted hover:text-gold transition-colors underline disabled:no-underline disabled:opacity-60"
+      >
+        {cooldown > 0 ? `${a.resendIn} ${cooldown}s` : a.resend}
+      </button>
+    </div>
+  );
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -30,9 +70,15 @@ export default function AuthCard({ mode }: { mode: "login" | "register" }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
       if (error) {
-        setError(error.message.includes("Invalid") ? a.errorInvalid : a.errorGeneric);
+        if (error.message.toLowerCase().includes("not confirmed")) {
+          setError(a.errorUnconfirmed);
+          setShowResend(true);
+        } else {
+          setError(error.message.includes("Invalid") ? a.errorInvalid : a.errorGeneric);
+        }
         return;
       }
+      setShowResend(false);
       router.push("/dashboard");
       router.refresh();
     } else {
@@ -109,9 +155,12 @@ export default function AuthCard({ mode }: { mode: "login" | "register" }) {
           </p>
 
           {checkEmail ? (
-            <p className="text-sm text-center border border-gold/40 bg-gold/10 px-4 py-4">
-              {a.checkEmail}
-            </p>
+            <div>
+              <p className="text-sm text-center border border-gold/40 bg-gold/10 px-4 py-4">
+                {a.checkEmail}
+              </p>
+              {resendBlock}
+            </div>
           ) : (
             <>
               <form onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -162,6 +211,7 @@ export default function AuthCard({ mode }: { mode: "login" | "register" }) {
                   </label>
                 )}
                 {error && <p className="text-xs text-red-400">{error}</p>}
+                {showResend && resendBlock}
                 <button type="submit" disabled={loading} className="btn-gold w-full !justify-center disabled:opacity-60">
                   {loading ? "…" : isLogin ? a.login : a.register}
                 </button>
