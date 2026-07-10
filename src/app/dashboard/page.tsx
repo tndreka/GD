@@ -30,6 +30,7 @@ function DashboardInner() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [progress, setProgress] = useState<Record<string, { done: number; total: number }>>({});
+  const [hasHealth, setHasHealth] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const d = t.dash;
@@ -57,6 +58,12 @@ function DashboardInner() {
           supabase.from("program_exercises").select("program_id"),
           supabase.from("exercise_progress").select("program_id").eq("user_id", user.id),
         ]);
+      const { data: health } = await supabase
+        .from("health_profiles")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!cancelled) setHasHealth(!!health);
 
       if (cancelled) return;
       setName(profile?.full_name ?? user.email ?? null);
@@ -98,6 +105,12 @@ function DashboardInner() {
             <span className="gold-text">G</span>RACIANO <span className="gold-text">D</span>HIMA
           </Link>
           <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/health"
+              className="text-xs text-muted hover:text-gold uppercase tracking-widest hidden sm:inline"
+            >
+              {t.health.link}
+            </Link>
             {isAdmin && (
               <Link href="/admin" className="text-xs text-gold hover:underline uppercase tracking-widest">
                 {d.admin}
@@ -127,6 +140,18 @@ function DashboardInner() {
         <p className="section-tag">{d.welcome}{name ? ` — ${name}` : ""}</p>
         <h1 className="heading text-4xl sm:text-5xl font-bold">{d.title}</h1>
         <p className="text-muted mt-3">{d.sub}</p>
+
+        {!loading && !hasHealth && (
+          <div className="card card-featured p-5 mt-8 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="font-bold">{t.health.promptTitle}</p>
+              <p className="text-sm text-muted mt-1">{t.health.promptDesc}</p>
+            </div>
+            <Link href="/dashboard/health" className="btn-gold !py-2.5 !px-5 !text-xs shrink-0">
+              {t.health.promptCta} →
+            </Link>
+          </div>
+        )}
 
         {loading ? (
           <div className="mt-12 grid gap-5 sm:grid-cols-2">
