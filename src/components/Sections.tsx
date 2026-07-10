@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLang } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase/client";
 import Reveal from "./Reveal";
 
 const WHATSAPP_URL = "https://wa.me/355687683048";
@@ -25,8 +26,69 @@ export function Stats() {
   );
 }
 
+// card order matches t.programs.items: TRX, Posture, Summer Body
+const PROGRAM_SLUGS = ["trx", "posture", "summer-body"];
+
 export function Programs() {
   const { t } = useLang();
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [owned, setOwned] = useState<Record<string, boolean>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+    (async () => {
+      const [{ data: progs }, { data: mine }] = await Promise.all([
+        supabase.from("programs").select("slug, price_cents").eq("active", true),
+        supabase.from("purchases").select("status, programs ( slug )").eq("status", "active"),
+      ]);
+      if (cancelled) return;
+      const p: Record<string, number> = {};
+      (progs ?? []).forEach((r) => (p[r.slug] = r.price_cents));
+      setPrices(p);
+      const o: Record<string, boolean> = {};
+      ((mine as unknown as { programs: { slug: string } | null }[]) ?? []).forEach((r) => {
+        if (r.programs?.slug) o[r.programs.slug] = true;
+      });
+      setOwned(o);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function buy(slug: string) {
+    setError(null);
+    setBusy(slug);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+      if (res.status === 401) {
+        window.location.href = "/register";
+        return;
+      }
+      if (res.status === 409) {
+        setOwned((o) => ({ ...o, [slug]: true }));
+        return;
+      }
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setError(t.programs.checkoutError);
+    } catch {
+      setError(t.programs.checkoutError);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <section id="programs" className="mx-auto max-w-7xl px-5 md:px-8 py-24">
       <Reveal className="text-center max-w-2xl mx-auto">
@@ -51,13 +113,27 @@ export function Programs() {
               <h3 className="text-2xl font-bold">{p.name}</h3>
               <p className="mt-3 text-sm text-muted flex-1">{p.desc}</p>
               <p className="mt-4 text-xs text-muted uppercase tracking-widest">{t.programs.price}</p>
-              {/* price placeholder */}
-              <div className="mt-2 heading text-3xl font-bold gold-text">€—</div>
-              <a href="#contact" className="btn-gold mt-6 !w-full">{t.programs.cta}</a>
+              <div className="mt-2 heading text-3xl font-bold gold-text">
+                {prices[PROGRAM_SLUGS[i]] ? `€${(prices[PROGRAM_SLUGS[i]] / 100).toFixed(0)}` : "€—"}
+              </div>
+              {owned[PROGRAM_SLUGS[i]] ? (
+                <Link href={`/dashboard/${PROGRAM_SLUGS[i]}`} className="btn-ghost mt-6 !w-full">
+                  {t.programs.owned} →
+                </Link>
+              ) : (
+                <button
+                  onClick={() => buy(PROGRAM_SLUGS[i])}
+                  disabled={busy !== null}
+                  className="btn-gold mt-6 !w-full disabled:opacity-60"
+                >
+                  {busy === PROGRAM_SLUGS[i] ? t.programs.buying : t.programs.buy}
+                </button>
+              )}
             </div>
           </Reveal>
         ))}
       </div>
+      {error && <p className="mt-6 text-center text-sm text-red-400">{error}</p>}
     </section>
   );
 }

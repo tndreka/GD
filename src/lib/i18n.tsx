@@ -34,6 +34,10 @@ export const dict: Record<Lang, any> = {
         { name: "Summer Body", desc: "Lean out and build visible muscle with structured progressive workouts.", badge: "" },
       ],
       price: "One-time purchase · Instant access",
+      buy: "Buy Now",
+      buying: "Redirecting…",
+      owned: "In Your Library",
+      checkoutError: "Something went wrong. Please try again or contact us.",
     },
     coaching: {
       tag: "Work With Graciano",
@@ -260,6 +264,10 @@ export const dict: Record<Lang, any> = {
         { name: "Summer Body", desc: "Digj yndyrën dhe ndërto muskuj të dukshëm me stërvitje progresive të strukturuara.", badge: "" },
       ],
       price: "Blerje një herë · Qasje e menjëhershme",
+      buy: "Bli Tani",
+      buying: "Duke të ridrejtuar…",
+      owned: "Në Bibliotekën Tënde",
+      checkoutError: "Diçka shkoi gabim. Provo përsëri ose na kontakto.",
     },
     coaching: {
       tag: "Puno me Gracianon",
