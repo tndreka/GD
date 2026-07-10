@@ -210,6 +210,9 @@ export const dict: Record<Lang, any> = {
       hideVideo: "Hide video",
       empty: "Content is being prepared — check back soon.",
       locked: "You don't have access to this program.",
+      progress: "Your Progress",
+      markDone: "Mark as done",
+      markUndone: "Mark as not done",
     },
     admin: {
       title: "Admin Panel",
@@ -446,6 +449,9 @@ export const dict: Record<Lang, any> = {
       hideVideo: "Mbyll videon",
       empty: "Përmbajtja po përgatitet — kthehu së shpejti.",
       locked: "Nuk ke akses në këtë program.",
+      progress: "Progresi Yt",
+      markDone: "Shëno si të kryer",
+      markUndone: "Shëno si të pakryer",
     },
     admin: {
       title: "Paneli i Adminit",

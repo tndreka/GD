@@ -11,6 +11,7 @@ type Purchase = {
   status: string;
   purchased_at: string;
   programs: {
+    id: string;
     slug: string;
     title_en: string;
     title_sq: string;
@@ -28,6 +29,7 @@ function DashboardInner() {
   const [name, setName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [progress, setProgress] = useState<Record<string, { done: number; total: number }>>({});
   const [loading, setLoading] = useState(true);
 
   const d = t.dash;
@@ -43,20 +45,33 @@ function DashboardInner() {
         return;
       }
 
-      const [{ data: profile }, { data: rows }] = await Promise.all([
-        supabase.from("profiles").select("full_name, is_admin").eq("id", user.id).single(),
-        supabase
-          .from("purchases")
-          .select(
-            "id, status, purchased_at, programs ( slug, title_en, title_sq, description_en, description_sq, tier )"
-          )
-          .order("purchased_at", { ascending: false }),
-      ]);
+      const [{ data: profile }, { data: rows }, { data: totals }, { data: mine }] =
+        await Promise.all([
+          supabase.from("profiles").select("full_name, is_admin").eq("id", user.id).single(),
+          supabase
+            .from("purchases")
+            .select(
+              "id, status, purchased_at, programs ( id, slug, title_en, title_sq, description_en, description_sq, tier )"
+            )
+            .order("purchased_at", { ascending: false }),
+          supabase.from("program_exercises").select("program_id"),
+          supabase.from("exercise_progress").select("program_id").eq("user_id", user.id),
+        ]);
 
       if (cancelled) return;
       setName(profile?.full_name ?? user.email ?? null);
       setIsAdmin(profile?.is_admin ?? false);
       setPurchases((rows as unknown as Purchase[]) ?? []);
+      const prog: Record<string, { done: number; total: number }> = {};
+      (totals ?? []).forEach((r) => {
+        prog[r.program_id] = prog[r.program_id] ?? { done: 0, total: 0 };
+        prog[r.program_id].total += 1;
+      });
+      (mine ?? []).forEach((r) => {
+        prog[r.program_id] = prog[r.program_id] ?? { done: 0, total: 0 };
+        prog[r.program_id].done += 1;
+      });
+      setProgress(prog);
       setLoading(false);
     })();
     return () => {
@@ -143,6 +158,29 @@ function DashboardInner() {
                   </span>
                 </div>
                 <p className="text-sm text-muted mt-3 flex-1">{desc(p)}</p>
+                {p.programs?.id &&
+                  progress[p.programs.id] &&
+                  progress[p.programs.id].total > 0 && (
+                    <div className="mt-4">
+                      <div className="flex justify-between text-[10px] uppercase tracking-widest text-muted mb-1.5">
+                        <span>{t.viewer.progress}</span>
+                        <span>
+                          {Math.round(
+                            (progress[p.programs.id].done / progress[p.programs.id].total) * 100
+                          )}
+                          %
+                        </span>
+                      </div>
+                      <div className="h-1 bg-surface-2 border border-line overflow-hidden">
+                        <div
+                          className="h-full bg-gold"
+                          style={{
+                            width: `${Math.round((progress[p.programs.id].done / progress[p.programs.id].total) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 {p.status === "active" && p.programs?.slug ? (
                   <Link
                     href={`/dashboard/${p.programs.slug}`}

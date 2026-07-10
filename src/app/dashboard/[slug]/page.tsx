@@ -86,6 +86,8 @@ function ProgramInner({ slug }: { slug: string }) {
   const [openVideo, setOpenVideo] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [done, setDone] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -108,7 +110,9 @@ function ProgramInner({ slug }: { slug: string }) {
         return;
       }
 
-      const [fRes, wRes] = await Promise.all([
+      setUserId(user.id);
+
+      const [fRes, wRes, pRes] = await Promise.all([
         supabase
           .from("program_files")
           .select("id, title_en, title_sq, storage_path")
@@ -121,6 +125,7 @@ function ProgramInner({ slug }: { slug: string }) {
           )
           .eq("program_id", prog.id)
           .order("week_number"),
+        supabase.from("exercise_progress").select("exercise_id").eq("program_id", prog.id),
       ]);
 
       if (cancelled) return;
@@ -156,6 +161,7 @@ function ProgramInner({ slug }: { slug: string }) {
       setProgram(prog);
       setFiles(fRes.data ?? []);
       setWeeks(sorted);
+      setDone(new Set((pRes.data ?? []).map((r) => r.exercise_id)));
       setLoading(false);
     })();
     return () => {
@@ -171,10 +177,52 @@ function ProgramInner({ slug }: { slug: string }) {
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   }
 
+  async function toggleDone(ex: Exercise) {
+    if (!userId || !program) return;
+    const isDone = done.has(ex.id);
+    // optimistic update
+    setDone((prev) => {
+      const next = new Set(prev);
+      if (isDone) next.delete(ex.id);
+      else next.add(ex.id);
+      return next;
+    });
+    const revert = () =>
+      setDone((prev) => {
+        const next = new Set(prev);
+        if (isDone) next.add(ex.id);
+        else next.delete(ex.id);
+        return next;
+      });
+    if (isDone) {
+      const { error } = await supabase.from("exercise_progress").delete().eq("exercise_id", ex.id);
+      if (error) revert();
+    } else {
+      const { error } = await supabase
+        .from("exercise_progress")
+        .insert({ user_id: userId, exercise_id: ex.id, program_id: program.id });
+      if (error) revert();
+    }
+  }
+
   const L = <T extends Record<string, unknown>>(row: T, base: string) =>
     (lang === "sq" ? row[`${base}_sq`] : row[`${base}_en`]) as string | null;
 
   const week = weeks[activeWeek];
+  const totalExercises = weeks.reduce(
+    (n, w) => n + w.program_days.reduce((m, d) => m + d.program_exercises.length, 0),
+    0
+  );
+  const doneCount = weeks.reduce(
+    (n, w) =>
+      n +
+      w.program_days.reduce(
+        (m, d) => m + d.program_exercises.filter((ex) => done.has(ex.id)).length,
+        0
+      ),
+    0
+  );
+  const pct = totalExercises > 0 ? Math.round((doneCount / totalExercises) * 100) : 0;
 
   return (
     <div className="min-h-svh">
@@ -214,6 +262,23 @@ function ProgramInner({ slug }: { slug: string }) {
             <h1 className="heading text-4xl sm:text-5xl font-bold">{L(program ?? {}, "title")}</h1>
             {program && L(program, "description") && (
               <p className="text-muted mt-3">{L(program, "description")}</p>
+            )}
+
+            {totalExercises > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center justify-between text-xs text-muted mb-2">
+                  <span className="uppercase tracking-widest">{v.progress}</span>
+                  <span>
+                    {doneCount}/{totalExercises} · {pct}%
+                  </span>
+                </div>
+                <div className="h-1.5 bg-surface-2 border border-line overflow-hidden">
+                  <div
+                    className="h-full bg-gold transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
             )}
 
             {files.length > 0 && (
@@ -258,15 +323,29 @@ function ProgramInner({ slug }: { slug: string }) {
                 <div className="mt-6 flex flex-col gap-5">
                   {week?.program_days.map((d) => (
                     <div key={d.id} className="card p-5">
-                      <h2 className="heading text-xl font-bold">
-                        {d.day_number}. {L(d, "title")}
-                      </h2>
+                      <div className="flex items-center justify-between gap-3">
+                        <h2 className="heading text-xl font-bold">
+                          {d.day_number}. {L(d, "title")}
+                        </h2>
+                        <span
+                          className={`text-[10px] uppercase tracking-widest px-2 py-1 border shrink-0 ${
+                            d.program_exercises.length > 0 &&
+                            d.program_exercises.every((ex) => done.has(ex.id))
+                              ? "border-gold/50 text-gold"
+                              : "border-line text-muted"
+                          }`}
+                        >
+                          {d.program_exercises.filter((ex) => done.has(ex.id)).length}/
+                          {d.program_exercises.length}
+                        </span>
+                      </div>
                       {L(d, "notes") && <p className="text-xs text-muted mt-1.5">{L(d, "notes")}</p>}
 
                       <div className="mt-4 overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="text-[10px] uppercase tracking-widest text-muted">
+                              <th className="w-8 py-2" aria-label="done" />
                               <th className="text-left font-normal py-2 pr-3">{v.exercise}</th>
                               <th className="text-center font-normal py-2 px-3">{v.sets}</th>
                               <th className="text-center font-normal py-2 px-3">{v.reps}</th>
@@ -279,7 +358,20 @@ function ProgramInner({ slug }: { slug: string }) {
                               return (
                                 <Fragment key={ex.id}>
                                   <tr className="border-t border-line">
-                                    <td className="py-3 pr-3">
+                                    <td className="py-3 pr-2 align-top">
+                                      <button
+                                        onClick={() => toggleDone(ex)}
+                                        aria-label={done.has(ex.id) ? v.markUndone : v.markDone}
+                                        className={`w-5 h-5 border flex items-center justify-center text-xs transition-colors ${
+                                          done.has(ex.id)
+                                            ? "bg-gold border-gold text-black font-bold"
+                                            : "border-line text-transparent hover:border-gold"
+                                        }`}
+                                      >
+                                        ✓
+                                      </button>
+                                    </td>
+                                    <td className={`py-3 pr-3 ${done.has(ex.id) ? "opacity-50" : ""}`}>
                                       {L(ex, "name")}
                                       {L(ex, "notes") && (
                                         <span className="block text-xs text-muted mt-0.5">{L(ex, "notes")}</span>
@@ -299,7 +391,7 @@ function ProgramInner({ slug }: { slug: string }) {
                                   </tr>
                                   {embed && openVideo === ex.id && (
                                     <tr key={`${ex.id}-video`}>
-                                      <td colSpan={4} className="pb-4">
+                                      <td colSpan={5} className="pb-4">
                                         <div className="aspect-video w-full">
                                           <iframe
                                             src={embed}
