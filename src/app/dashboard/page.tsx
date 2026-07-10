@@ -143,7 +143,16 @@ function DashboardInner() {
                   </span>
                 </div>
                 <p className="text-sm text-muted mt-3 flex-1">{desc(p)}</p>
-                <p className="text-xs text-muted mt-5 border-t border-line pt-4">{d.soon}</p>
+                {p.status === "active" && p.programs?.slug ? (
+                  <Link
+                    href={`/dashboard/${p.programs.slug}`}
+                    className="btn-gold inline-flex self-start mt-5 !py-2.5 !px-5 !text-xs"
+                  >
+                    {d.open} →
+                  </Link>
+                ) : (
+                  <p className="text-xs text-muted mt-5 border-t border-line pt-4">{d.soon}</p>
+                )}
               </div>
             ))}
           </div>

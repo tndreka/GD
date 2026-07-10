@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useLang } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 
@@ -80,9 +81,9 @@ export default function Nav() {
 
           {loggedIn ? (
             <>
-              <a href="/dashboard" className="btn-ghost !py-2 !px-4 !text-xs hidden sm:inline-flex">
+              <Link href="/dashboard" className="btn-ghost !py-2 !px-4 !text-xs hidden sm:inline-flex">
                 {t.nav.dashboard}
-              </a>
+              </Link>
               <button onClick={logout} className="hidden sm:inline-flex text-xs text-muted hover:text-foreground transition-colors">
                 {t.nav.logout}
               </button>
@@ -121,9 +122,9 @@ export default function Nav() {
           ))}
           {loggedIn ? (
             <>
-              <a href="/dashboard" onClick={() => setOpen(false)} className="btn-ghost !py-2.5 text-center">
+              <Link href="/dashboard" onClick={() => setOpen(false)} className="btn-ghost !py-2.5 text-center">
                 {t.nav.dashboard}
-              </a>
+              </Link>
               <button onClick={logout} className="text-muted hover:text-foreground text-center py-1">
                 {t.nav.logout}
               </button>
