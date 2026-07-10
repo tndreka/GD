@@ -6,6 +6,21 @@ import { useRouter } from "next/navigation";
 import { LangProvider, useLang, Lang } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 
+type StoreProgram = {
+  id: string;
+  slug: string;
+  title_en: string;
+  title_sq: string;
+  description_en: string | null;
+  description_sq: string | null;
+  price_cents: number;
+};
+
+// Monday-based week index (days since epoch, shifted so weeks start Monday)
+function weekIndex(ms: number) {
+  return Math.floor((ms / 86400000 + 3) / 7);
+}
+
 type Purchase = {
   id: string;
   status: string;
@@ -31,6 +46,11 @@ function DashboardInner() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [progress, setProgress] = useState<Record<string, { done: number; total: number }>>({});
   const [hasHealth, setHasHealth] = useState(true);
+  const [streak, setStreak] = useState(0);
+  const [totalDone, setTotalDone] = useState(0);
+  const [store, setStore] = useState<StoreProgram[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [storeError, setStoreError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const d = t.dash;
@@ -56,14 +76,42 @@ function DashboardInner() {
             )
             .order("purchased_at", { ascending: false }),
           supabase.from("program_exercises").select("program_id"),
-          supabase.from("exercise_progress").select("program_id").eq("user_id", user.id),
+          supabase
+            .from("exercise_progress")
+            .select("program_id, completed_at")
+            .eq("user_id", user.id),
         ]);
-      const { data: health } = await supabase
-        .from("health_profiles")
-        .select("user_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (!cancelled) setHasHealth(!!health);
+      const [{ data: health }, { data: allProgs }] = await Promise.all([
+        supabase.from("health_profiles").select("user_id").eq("user_id", user.id).maybeSingle(),
+        supabase
+          .from("programs")
+          .select("id, slug, title_en, title_sq, description_en, description_sq, price_cents")
+          .eq("active", true)
+          .gt("price_cents", 0)
+          .order("price_cents"),
+      ]);
+      if (cancelled) return;
+      setHasHealth(!!health);
+
+      // streak: consecutive weeks (Mon-based) with at least one completed exercise
+      const weekSet = new Set((mine ?? []).map((r) => weekIndex(new Date(r.completed_at).getTime())));
+      let cur = weekIndex(Date.now());
+      if (!weekSet.has(cur)) cur -= 1; // grace: current week not started yet
+      let s = 0;
+      while (weekSet.has(cur)) {
+        s += 1;
+        cur -= 1;
+      }
+      setStreak(s);
+      setTotalDone((mine ?? []).length);
+
+      const ownedIds = new Set(
+        ((rows as unknown as Purchase[]) ?? [])
+          .filter((p) => p.status === "active")
+          .map((p) => p.programs?.id)
+          .filter(Boolean)
+      );
+      setStore(((allProgs as StoreProgram[]) ?? []).filter((p) => !ownedIds.has(p.id)));
 
       if (cancelled) return;
       setName(profile?.full_name ?? user.email ?? null);
@@ -91,6 +139,40 @@ function DashboardInner() {
     await supabase.auth.signOut();
     window.location.href = "/";
   }
+
+  async function buy(slug: string) {
+    setStoreError(null);
+    setBusy(slug);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+      setStoreError(t.programs.checkoutError);
+    } catch {
+      setStoreError(t.programs.checkoutError);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const g = t.gamify;
+  const anyComplete = Object.values(progress).some((p) => p.total > 0 && p.done >= p.total);
+  const badges = [
+    { key: "first", earned: totalDone >= 1 },
+    { key: "ex25", earned: totalDone >= 25 },
+    { key: "ex100", earned: totalDone >= 100 },
+    { key: "streak2", earned: streak >= 2 },
+    { key: "streak4", earned: streak >= 4 },
+    { key: "complete", earned: anyComplete },
+  ];
+  const earnedCount = badges.filter((b) => b.earned).length;
 
   const title = (p: Purchase) => (lang === "sq" ? p.programs?.title_sq : p.programs?.title_en);
   const desc = (p: Purchase) =>
@@ -140,6 +222,45 @@ function DashboardInner() {
         <p className="section-tag">{d.welcome}{name ? ` — ${name}` : ""}</p>
         <h1 className="heading text-4xl sm:text-5xl font-bold">{d.title}</h1>
         <p className="text-muted mt-3">{d.sub}</p>
+
+        {/* stats row */}
+        {!loading && (
+          <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-5">
+            <div className="card p-4 sm:p-6 text-center">
+              <div className="heading text-3xl sm:text-4xl font-bold gold-text">
+                {streak > 0 ? "🔥 " : ""}{streak}
+              </div>
+              <div className="mt-1 text-[10px] sm:text-xs text-muted uppercase tracking-widest">{g.streak}</div>
+            </div>
+            <div className="card p-4 sm:p-6 text-center">
+              <div className="heading text-3xl sm:text-4xl font-bold gold-text">{totalDone}</div>
+              <div className="mt-1 text-[10px] sm:text-xs text-muted uppercase tracking-widest">{g.exercises}</div>
+            </div>
+            <div className="card p-4 sm:p-6 text-center">
+              <div className="heading text-3xl sm:text-4xl font-bold gold-text">
+                {earnedCount}/{badges.length}
+              </div>
+              <div className="mt-1 text-[10px] sm:text-xs text-muted uppercase tracking-widest">{g.achievements}</div>
+            </div>
+          </div>
+        )}
+
+        {/* badges */}
+        {!loading && (
+          <div className="mt-5 flex flex-wrap gap-2">
+            {badges.map((b) => (
+              <span
+                key={b.key}
+                className={`text-[10px] uppercase tracking-widest px-2.5 py-1.5 border ${
+                  b.earned ? "border-gold/60 text-gold bg-gold/10" : "border-line text-muted/50"
+                }`}
+              >
+                {b.earned ? "★ " : "☆ "}
+                {g.badges[b.key as keyof typeof g.badges]}
+              </span>
+            ))}
+          </div>
+        )}
 
         {!loading && !hasHealth && (
           <div className="card card-featured p-5 mt-8 flex flex-wrap items-center justify-between gap-4">
@@ -218,6 +339,39 @@ function DashboardInner() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* in-dashboard store */}
+        {!loading && store.length > 0 && (
+          <div className="mt-16">
+            <h2 className="heading text-2xl sm:text-3xl font-bold">{g.storeTitle}</h2>
+            <p className="text-sm text-muted mt-2">{g.storeSub}</p>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {store.map((p) => (
+                <div key={p.id} className="card p-6 flex flex-col">
+                  <h3 className="heading text-lg font-bold">
+                    {lang === "sq" ? p.title_sq : p.title_en}
+                  </h3>
+                  <p className="text-sm text-muted mt-2 flex-1">
+                    {lang === "sq" ? p.description_sq : p.description_en}
+                  </p>
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <span className="heading text-2xl font-bold gold-text">
+                      €{(p.price_cents / 100).toFixed(0)}
+                    </span>
+                    <button
+                      onClick={() => buy(p.slug)}
+                      disabled={busy !== null}
+                      className="btn-gold !py-2.5 !px-5 !text-xs disabled:opacity-60"
+                    >
+                      {busy === p.slug ? t.programs.buying : t.programs.buy}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {storeError && <p className="mt-4 text-sm text-red-400">{storeError}</p>}
           </div>
         )}
       </main>
