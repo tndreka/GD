@@ -43,7 +43,33 @@ type Lead = {
   created_at: string;
 };
 
-type Tab = "clients" | "access" | "apps" | "leads";
+type Tab = "clients" | "access" | "apps" | "leads" | "health";
+
+type HealthProfile = {
+  user_id: string;
+  birth_year: number | null;
+  height_cm: number | null;
+  start_weight_kg: number | null;
+  goal: string | null;
+  activity_level: string | null;
+  injuries: string | null;
+  medications: string | null;
+  parq: Record<string, boolean>;
+};
+
+type CheckinRow = {
+  id: string;
+  weight_kg: number | null;
+  energy: number | null;
+  sleep: number | null;
+  adherence: number | null;
+  soreness: number | null;
+  note: string | null;
+  photo_front: string | null;
+  photo_side: string | null;
+  photo_back: string | null;
+  created_at: string;
+};
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", {
@@ -73,6 +99,12 @@ function AdminInner() {
   const [grantUser, setGrantUser] = useState("");
   const [grantProgram, setGrantProgram] = useState("");
   const [granting, setGranting] = useState(false);
+
+  // health tab
+  const [healthUser, setHealthUser] = useState("");
+  const [healthProfile, setHealthProfile] = useState<HealthProfile | null>(null);
+  const [healthCheckins, setHealthCheckins] = useState<CheckinRow[]>([]);
+  const [healthLoading, setHealthLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     const [p1, p2, p3, p4, p5] = await Promise.all([
@@ -138,6 +170,30 @@ function AdminInner() {
     setGranting(false);
   }
 
+  async function loadHealth(userId: string) {
+    setHealthUser(userId);
+    setHealthProfile(null);
+    setHealthCheckins([]);
+    if (!userId) return;
+    setHealthLoading(true);
+    const [{ data: hp }, { data: ci }] = await Promise.all([
+      supabase.from("health_profiles").select("*").eq("user_id", userId).maybeSingle(),
+      supabase
+        .from("checkins")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true }),
+    ]);
+    setHealthProfile((hp as HealthProfile) ?? null);
+    setHealthCheckins((ci as CheckinRow[]) ?? []);
+    setHealthLoading(false);
+  }
+
+  async function openPhoto(path: string) {
+    const { data } = await supabase.storage.from("checkin-photos").createSignedUrl(path, 300);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  }
+
   async function setStatus(id: string, status: "active" | "expired") {
     setError(false);
     const { error: err } = await supabase.from("purchases").update({ status }).eq("id", id);
@@ -153,9 +209,26 @@ function AdminInner() {
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "clients", label: a.tabClients, count: profiles.length },
     { key: "access", label: a.tabAccess, count: purchases.length },
+    { key: "health", label: a.tabHealth, count: profiles.filter((p) => !p.is_admin).length },
     { key: "apps", label: a.tabApps, count: contacts.length },
     { key: "leads", label: a.tabLeads, count: leads.length },
   ];
+
+  const h = t.health;
+  const parqFlagged =
+    healthProfile && Object.values(healthProfile.parq ?? {}).some((v) => v === true);
+  const weightsAdm = healthCheckins.filter((c) => c.weight_kg != null);
+  const chartAdm = (() => {
+    if (weightsAdm.length < 2) return null;
+    const vals = weightsAdm.map((c) => Number(c.weight_kg));
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const span = max - min || 1;
+    const pts = vals
+      .map((v, i) => `${((i / (vals.length - 1)) * 280 + 10).toFixed(1)},${(70 - ((v - min) / span) * 55).toFixed(1)}`)
+      .join(" ");
+    return { pts, first: vals[0], last: vals[vals.length - 1] };
+  })();
 
   return (
     <div className="min-h-svh">
@@ -337,6 +410,146 @@ function AdminInner() {
                   )}
                 </div>
               </>
+            )}
+
+            {/* HEALTH / CHECK-INS */}
+            {tab === "health" && (
+              <div className="mt-6">
+                <select
+                  value={healthUser}
+                  onChange={(e) => loadHealth(e.target.value)}
+                  className={`${inputCls} max-w-md`}
+                >
+                  <option value="">{a.selectClient}</option>
+                  {profiles
+                    .filter((p) => !p.is_admin)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.full_name ?? p.email} ({p.email})
+                      </option>
+                    ))}
+                </select>
+
+                {healthLoading && <div className="card p-6 h-24 animate-pulse mt-4" />}
+
+                {!healthLoading && healthUser && !healthProfile && (
+                  <p className="text-sm text-muted mt-4">{a.noHealth}</p>
+                )}
+
+                {!healthLoading && healthProfile && (
+                  <>
+                    <div className="card p-5 mt-4">
+                      {parqFlagged && (
+                        <p className="text-xs text-gold border border-gold/40 bg-gold/10 px-4 py-3 mb-4">
+                          ⚠ {a.flag}
+                        </p>
+                      )}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-muted">{h.birthYear}</p>
+                          <p className="mt-1">{healthProfile.birth_year ?? "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-muted">{h.height}</p>
+                          <p className="mt-1">{healthProfile.height_cm ?? "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-muted">{h.startWeight}</p>
+                          <p className="mt-1">{healthProfile.start_weight_kg ?? "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-muted">{h.goal}</p>
+                          <p className="mt-1">
+                            {healthProfile.goal != null ? h.goalOptions[Number(healthProfile.goal)] ?? "—" : "—"}
+                          </p>
+                        </div>
+                      </div>
+                      {(healthProfile.injuries || healthProfile.medications) && (
+                        <div className="mt-4 text-sm text-muted border-t border-line pt-4">
+                          {healthProfile.injuries && (
+                            <p>
+                              <span className="text-foreground">{h.injuries}:</span> {healthProfile.injuries}
+                            </p>
+                          )}
+                          {healthProfile.medications && (
+                            <p className="mt-1">
+                              <span className="text-foreground">{h.medications}:</span> {healthProfile.medications}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {chartAdm && (
+                      <div className="card p-5 mt-4">
+                        <div className="flex justify-between text-xs text-muted mb-2">
+                          <span className="uppercase tracking-widest">{h.chartTitle}</span>
+                          <span>
+                            {chartAdm.first} → <span className="text-gold font-bold">{chartAdm.last} {h.kg}</span>
+                          </span>
+                        </div>
+                        <svg viewBox="0 0 300 80" className="w-full border border-line bg-surface-2">
+                          <polyline points={chartAdm.pts} fill="none" stroke="#ffc800" strokeWidth="2" />
+                        </svg>
+                      </div>
+                    )}
+
+                    <div className="card mt-4 overflow-x-auto">
+                      {healthCheckins.length === 0 ? (
+                        <p className="text-muted text-sm p-8 text-center">{h.noCheckins}</p>
+                      ) : (
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className={thCls}>{h.date}</th>
+                              <th className={thCls}>{h.weight}</th>
+                              <th className={thCls}>{h.energy}</th>
+                              <th className={thCls}>{h.sleep}</th>
+                              <th className={thCls}>{h.adherence}</th>
+                              <th className={thCls}>{h.soreness}</th>
+                              <th className={thCls}>{h.photos}</th>
+                              <th className={thCls}>{h.note}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[...healthCheckins].reverse().map((c) => (
+                              <tr key={c.id}>
+                                <td className={`${tdCls} text-muted`}>{fmtDate(c.created_at)}</td>
+                                <td className={tdCls}>{c.weight_kg ?? "—"}</td>
+                                <td className={tdCls}>{c.energy ?? "—"}</td>
+                                <td className={tdCls}>{c.sleep ?? "—"}</td>
+                                <td className={tdCls}>{c.adherence ?? "—"}</td>
+                                <td className={tdCls}>{c.soreness ?? "—"}</td>
+                                <td className={tdCls}>
+                                  <span className="flex gap-2">
+                                    {c.photo_front && (
+                                      <button onClick={() => openPhoto(c.photo_front!)} className="text-xs text-gold hover:underline">
+                                        F
+                                      </button>
+                                    )}
+                                    {c.photo_side && (
+                                      <button onClick={() => openPhoto(c.photo_side!)} className="text-xs text-gold hover:underline">
+                                        S
+                                      </button>
+                                    )}
+                                    {c.photo_back && (
+                                      <button onClick={() => openPhoto(c.photo_back!)} className="text-xs text-gold hover:underline">
+                                        B
+                                      </button>
+                                    )}
+                                    {!c.photo_front && !c.photo_side && !c.photo_back && "—"}
+                                  </span>
+                                </td>
+                                <td className={`${tdCls} text-muted max-w-[200px] truncate`}>{c.note ?? "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
 
             {/* APPLICATIONS */}
