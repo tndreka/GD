@@ -196,6 +196,8 @@ export const dict: Record<Lang, any> = {
       logout: "Log Out",
       admin: "Admin",
       open: "Open Program",
+      changePw: "Change password",
+      paySuccess: "Payment received — your new program is unlocked below. 🎉",
     },
     viewer: {
       back: "← My Programs",
@@ -517,6 +519,8 @@ export const dict: Record<Lang, any> = {
       logout: "Dil",
       admin: "Admin",
       open: "Hap Programin",
+      changePw: "Ndrysho fjalëkalimin",
+      paySuccess: "Pagesa u krye — programi yt i ri është hapur më poshtë. 🎉",
     },
     viewer: {
       back: "← Programet e Mia",

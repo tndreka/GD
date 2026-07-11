@@ -51,6 +51,7 @@ function DashboardInner() {
   const [store, setStore] = useState<StoreProgram[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [storeError, setStoreError] = useState<string | null>(null);
+  const [paySuccess, setPaySuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const d = t.dash;
@@ -61,6 +62,10 @@ function DashboardInner() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      if (!cancelled && window.location.search.includes("purchase=success")) {
+        setPaySuccess(true);
+        window.history.replaceState(null, "", "/dashboard");
+      }
       if (!user) {
         router.replace("/login");
         return;
@@ -219,6 +224,12 @@ function DashboardInner() {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 py-12">
+        {paySuccess && (
+          <div className="card card-featured p-4 mb-8 text-sm text-gold" role="status">
+            {d.paySuccess}
+          </div>
+        )}
+
         <p className="section-tag">{d.welcome}{name ? ` — ${name}` : ""}</p>
         <h1 className="heading text-4xl sm:text-5xl font-bold">{d.title}</h1>
         <p className="text-muted mt-3">{d.sub}</p>
@@ -374,6 +385,12 @@ function DashboardInner() {
             {storeError && <p className="mt-4 text-sm text-red-400">{storeError}</p>}
           </div>
         )}
+
+        <p className="mt-16 border-t border-line pt-6">
+          <Link href="/reset-password" className="text-xs text-muted hover:text-gold transition-colors">
+            {d.changePw}
+          </Link>
+        </p>
       </main>
     </div>
   );

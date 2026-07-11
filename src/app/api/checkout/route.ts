@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     ],
     metadata: { user_id: user.id, program_id: program.id },
     success_url: `${origin}/dashboard?purchase=success`,
-    cancel_url: `${origin}/#programs`,
+    cancel_url: `${origin}/dashboard`,
   });
 
   return NextResponse.json({ url: session.url });
