@@ -234,7 +234,7 @@ function AdminInner() {
     <div className="min-h-svh">
       <header className="border-b border-line bg-background/90 backdrop-blur sticky top-0 z-40">
         <div className="mx-auto max-w-5xl px-5 h-16 flex items-center justify-between">
-          <Link href="/" className="heading text-lg font-bold tracking-widest">
+          <Link href="/dashboard" className="heading text-lg font-bold tracking-widest">
             <span className="gold-text">G</span>RACIANO <span className="gold-text">D</span>HIMA
           </Link>
           <div className="flex items-center gap-3">

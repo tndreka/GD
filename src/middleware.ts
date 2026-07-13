@@ -35,8 +35,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // already logged in? no reason to see login/register
-  if (user && (path === "/login" || path === "/register")) {
+  // already logged in? the platform is home — no landing page, no login/register
+  if (user && (path === "/" || path === "/login" || path === "/register")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -46,5 +46,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/login", "/register", "/reset-password"],
+  matcher: ["/", "/dashboard/:path*", "/admin/:path*", "/login", "/register", "/reset-password"],
 };
